@@ -26,6 +26,8 @@ namespace Test_Taste_Console_Application.Domain.Services
         {
             var allPlanetsWithTheirMoons = new Collection<Planet>();
 
+            Logger.Instance.Info($"Loding data...");
+
             var response = _httpClientService.Client
                 .GetAsync(UriPath.GetAllPlanetsWithMoonsQueryParameters)
                 .Result;
@@ -43,7 +45,12 @@ namespace Test_Taste_Console_Application.Domain.Services
             var results = JsonConvert.DeserializeObject<JsonResult<PlanetDto>>(content);
 
             //The JSON converter can return a null object. 
-            if (results == null) return allPlanetsWithTheirMoons;
+            if (results == null)
+            {
+                Logger.Instance.Warn($"Plant Data Not Found");
+                return allPlanetsWithTheirMoons;
+            }
+            Logger.Instance.Info($"Successfully {results.Bodies.Count} planets");
 
             //If the planet doesn't have any moons, then it isn't added to the collection.
             foreach (var planet in results.Bodies)
@@ -51,6 +58,7 @@ namespace Test_Taste_Console_Application.Domain.Services
                 if(planet.Moons != null)
                 {
                     var newMoonsCollection = new Collection<MoonDto>();
+                    Logger.Instance.Info($"Moon Details For Planets {planet.Id}: Moons count: {planet.Moons.Count}");
                     foreach (var moon in planet.Moons)
                     {
                         var moonResponse = _httpClientService.Client
@@ -60,11 +68,13 @@ namespace Test_Taste_Console_Application.Domain.Services
                         newMoonsCollection.Add(JsonConvert.DeserializeObject<MoonDto>(moonContent));
                     }
                     planet.Moons = newMoonsCollection;
+                    Logger.Instance.Info($"Moon Details For Planate {planet.Id}");
 
                 }
                 allPlanetsWithTheirMoons.Add(new Planet(planet));
             }
 
+            Logger.Instance.Info($"All Plants Load Successfully");
             return allPlanetsWithTheirMoons;
         }
 
